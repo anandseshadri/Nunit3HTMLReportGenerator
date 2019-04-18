@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Web;
 using System.Configuration;
+using System.Linq;
 
 namespace NunitHTMLReportGenerator
 {
@@ -12,28 +13,32 @@ namespace NunitHTMLReportGenerator
     {
         private static void Main(string[] args)
         {
-            string xmlFilepath, outputPath;
-            // Checking if input file and output location is being passed 
+            string xmlFolderpath, outputFolderPath;
+            // Checking if XML folder and output location is being passed as arguments
             if ( args.Length != 0)
             {
-                xmlFilepath = args[0];
-                outputPath = args[1];
+                xmlFolderpath = args[0];
+                outputFolderPath = args[1];
             }
             else
             {
-                xmlFilepath = ConfigurationManager.AppSettings["xmlFilepath"];
-                outputPath = ConfigurationManager.AppSettings["outputPath"];
+                xmlFolderpath = ConfigurationManager.AppSettings["xmlFilepath"];
+                outputFolderPath = ConfigurationManager.AppSettings["outputPath"];
             }
-            TestResult testResult = XMLFileProcess.ProcessFile(xmlFilepath);
+            //Getting the latest XML file from folder
+            var directory = new DirectoryInfo(xmlFolderpath);
+            var myFile = directory.GetFiles("*.xml").OrderByDescending(f => f.LastWriteTime).First().FullName;
+
+            TestResult testResult = XMLFileProcess.ProcessFile(myFile);
             var html =  GenerateOutput.GenerateHTML(testResult);
             
             // GUIDs for filename.
             Guid fileName = Guid.NewGuid();
-            if(!Directory.Exists(outputPath))
+            if(!Directory.Exists(outputFolderPath))
             {
-                Directory.CreateDirectory(outputPath);
+                Directory.CreateDirectory(outputFolderPath);
             }
-            File.WriteAllText($"{outputPath}\\{fileName}.html", html);
+            File.WriteAllText($"{outputFolderPath}\\{fileName}.html", html);
         }
     }
 }
